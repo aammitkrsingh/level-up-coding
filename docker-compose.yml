@@ -1,0 +1,48 @@
+services:
+  # Main Postgres database
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: levelup
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  # Redis for leaderboard, caching, queues
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # Judge0 for code execution
+  judge0:
+    image: judge0/judge0:1.13.0
+    restart: always
+    environment:
+      # Change this to a strong key in production
+      AUTH_HEADER: "X-Auth-Token"
+      AUTH_KEY: "changeme"
+      PORT: 2358
+      # Optional: limit concurrent submissions
+      MAX_SUBMISSIONS_RUNNING: 10
+      # Judge0 uses Redis internally for some job tracking
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "2358:2358"
+    depends_on:
+      - redis
+    # If you need persistent logs or configs:
+    # volumes:
+    #   - judge0-data:/judge0
+
+volumes:
+  db-data:
+  redis-data:
